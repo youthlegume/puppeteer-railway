@@ -14,14 +14,25 @@ try {
 }
 
 // CORS configuration
+const allowedOrigins = [
+  'https://start-blush_r4_p17_weak_guppy.toddle.site',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://localhost:3000',
+  'https://localhost:3001'
+];
+
 const corsOptions = {
-  origin: [
-    'https://start-blush_r4_p17_weak_guppy.toddle.site',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://localhost:3000',
-    'https://localhost:3001'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
   credentials: true
@@ -259,15 +270,6 @@ app.post('/', async (req, res) => {
   }
 });
 
-// Handle OPTIONS requests for CORS
-app.options('/api/generate-pdf', (req, res) => {
-  res.status(200).end();
-});
-
-// Handle OPTIONS requests for root endpoint
-app.options('/', (req, res) => {
-  res.status(200).end();
-});
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
