@@ -24,12 +24,20 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
+    console.log('CORS check - Origin:', origin);
+    console.log('CORS check - Allowed origins:', allowedOrigins);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('CORS check - Allowing request with no origin');
+      return callback(null, true);
+    }
     
     if (allowedOrigins.includes(origin)) {
+      console.log('CORS check - Origin allowed:', origin);
       callback(null, true);
     } else {
+      console.log('CORS check - Origin blocked:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -40,6 +48,17 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
+
+// Additional CORS debugging middleware
+app.use((req, res, next) => {
+  console.log('Request received:', {
+    method: req.method,
+    url: req.url,
+    origin: req.get('Origin'),
+    headers: req.headers
+  });
+  next();
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
