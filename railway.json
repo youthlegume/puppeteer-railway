@@ -3,7 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "node server-ultra-minimal.js",
+    "startCommand": "node server.js",
     "healthcheckPath": "/",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
