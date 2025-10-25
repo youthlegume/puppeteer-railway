@@ -1,8 +1,15 @@
+console.log('Starting server...');
+console.log('Node version:', process.version);
+console.log('Environment:', process.env.NODE_ENV || 'development');
+
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+console.log('Express and CORS loaded');
+console.log('Port:', PORT);
 
 // Try to import puppeteer, but don't fail if it's not available
 let puppeteer;
@@ -11,6 +18,7 @@ try {
   console.log('Puppeteer loaded successfully');
 } catch (error) {
   console.log('Puppeteer not available:', error.message);
+  console.log('Server will run without PDF generation capability');
 }
 
 // CORS configuration
@@ -49,6 +57,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
+// Railway-specific: Respond to root path immediately for health checks
+app.get('/', (req, res) => {
+  console.log('Railway health check on root path');
+  res.status(200).json({ status: 'OK', service: 'puppeteer-pdf-api' });
+});
+
 // Additional CORS debugging middleware
 app.use((req, res, next) => {
   console.log('Request received:', {
@@ -65,7 +79,7 @@ app.use((req, res, next) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   console.log('Health check requested');
-  res.json({ 
+  res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
@@ -73,10 +87,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root GET endpoint for Railway health checks
-app.get('/', (req, res) => {
-  console.log('Root GET endpoint called');
-  res.json({ 
+// Additional info endpoint
+app.get('/info', (req, res) => {
+  console.log('Info endpoint called');
+  res.status(200).json({ 
     status: 'OK', 
     message: 'Puppeteer PDF Generation API',
     endpoints: {
@@ -92,7 +106,7 @@ app.get('/', (req, res) => {
 // Simple test endpoint without Puppeteer
 app.get('/test', (req, res) => {
   console.log('Test endpoint called');
-  res.json({ 
+  res.status(200).json({ 
     status: 'OK', 
     message: 'Server is working without Puppeteer',
     timestamp: new Date().toISOString() 

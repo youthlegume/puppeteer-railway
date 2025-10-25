@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start:minimal": "node server-minimal-test.js",
     "dev": "node server.js"
   },
   "dependencies": {
