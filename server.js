@@ -27,6 +27,20 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Root GET endpoint for Railway health checks
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Puppeteer PDF Generation API',
+    endpoints: {
+      health: '/health',
+      generatePdf: '/api/generate-pdf',
+      rootPdf: '/ (POST)'
+    },
+    timestamp: new Date().toISOString() 
+  });
+});
+
 // PDF generation endpoint
 app.post('/api/generate-pdf', async (req, res) => {
   let browser;
@@ -220,8 +234,32 @@ app.options('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`PDF endpoint: http://localhost:${PORT}/api/generate-pdf`);
+  console.log(`Root endpoint: http://localhost:${PORT}/`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('Server error:', error);
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
