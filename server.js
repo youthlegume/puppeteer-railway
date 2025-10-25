@@ -1,9 +1,17 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
 const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Try to import puppeteer, but don't fail if it's not available
+let puppeteer;
+try {
+  puppeteer = require('puppeteer');
+  console.log('Puppeteer loaded successfully');
+} catch (error) {
+  console.log('Puppeteer not available:', error.message);
+}
 
 // CORS configuration
 const corsOptions = {
@@ -64,6 +72,11 @@ app.post('/api/generate-pdf', async (req, res) => {
   let browser;
   
   try {
+    // Check if puppeteer is available
+    if (!puppeteer) {
+      return res.status(503).json({ error: 'PDF generation service temporarily unavailable' });
+    }
+
     // Input validation
     const { html } = req.body;
     
@@ -155,6 +168,11 @@ app.post('/', async (req, res) => {
   let browser;
   
   try {
+    // Check if puppeteer is available
+    if (!puppeteer) {
+      return res.status(503).json({ error: 'PDF generation service temporarily unavailable' });
+    }
+
     // Input validation
     const { html } = req.body;
     
