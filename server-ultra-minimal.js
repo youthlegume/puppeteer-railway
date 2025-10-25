@@ -28,9 +28,9 @@ app.get('/test', (req, res) => {
   res.json({ status: 'OK', test: 'working' });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`Ultra-minimal server running on port ${PORT}`);
+// Start server - BIND TO 0.0.0.0 FOR RAILWAY/DOCKER
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Ultra-minimal server running on http://0.0.0.0:${PORT}`);
 });
 
 server.on('error', (error) => {

@@ -318,12 +318,12 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`PDF endpoint: http://localhost:${PORT}/api/generate-pdf`);
-  console.log(`Root endpoint: http://localhost:${PORT}/`);
+// Start server - BIND TO 0.0.0.0 FOR RAILWAY/DOCKER
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`Health check: http://0.0.0.0:${PORT}/health`);
+  console.log(`PDF endpoint: http://0.0.0.0:${PORT}/api/generate-pdf`);
+  console.log(`Root endpoint: http://0.0.0.0:${PORT}/`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Server address: ${server.address()}`);
 });
