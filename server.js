@@ -173,7 +173,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     await page.emulateMediaType('screen');
     
     // Wait for any remaining animations or transitions
-    await page.waitForTimeout(100);
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Generate PDF with enhanced browser-matching options
     const pdfBuffer = await page.pdf({
@@ -279,7 +279,7 @@ app.post('/', async (req, res) => {
     await page.emulateMediaType('screen');
     
     // Wait for any remaining animations or transitions
-    await page.waitForTimeout(100);
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Generate PDF with enhanced browser-matching options
     const pdfBuffer = await page.pdf({
