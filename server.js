@@ -120,7 +120,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     }
 
     // Input validation
-    const { html } = req.body;
+    const { html, options = {} } = req.body;
     
     if (!html || typeof html !== 'string') {
       return res.status(400).json({ error: 'HTML content is required' });
@@ -169,12 +169,22 @@ app.post('/api/generate-pdf', async (req, res) => {
       timeout: 30000 // 30 second timeout
     });
 
-    // Generate PDF with your specifications
+    // Emulate screen media type for browser-like rendering
+    await page.emulateMediaType('screen');
+    
+    // Wait for any remaining animations or transitions
+    await page.waitForTimeout(100);
+
+    // Generate PDF with enhanced browser-matching options
     const pdfBuffer = await page.pdf({
-      width: '12in',
-      height: '9in',
-      printBackground: true,
-      margin: { top: '0in', right: '0in', bottom: '0in', left: '0in' },
+      width: options.width || '12in',
+      height: options.height || '9in',
+      printBackground: true,  // Ensures images/backgrounds render fully
+      preferCSSPageSize: true,  // Respects @page CSS rules
+      scale: options.scale || 1,  // 1:1 scale for exact browser matching
+      margin: options.margin || { top: '0in', right: '0in', bottom: '0in', left: '0in' },
+      displayHeaderFooter: false,  // No header/footer for clean output
+      format: options.format || null,  // Use custom dimensions instead of standard formats
     });
 
     // Validate PDF size (10MB limit)
@@ -216,7 +226,7 @@ app.post('/', async (req, res) => {
     }
 
     // Input validation
-    const { html } = req.body;
+    const { html, options = {} } = req.body;
     
     if (!html || typeof html !== 'string') {
       return res.status(400).json({ error: 'HTML content is required' });
@@ -265,12 +275,22 @@ app.post('/', async (req, res) => {
       timeout: 30000 // 30 second timeout
     });
 
-    // Generate PDF with your specifications
+    // Emulate screen media type for browser-like rendering
+    await page.emulateMediaType('screen');
+    
+    // Wait for any remaining animations or transitions
+    await page.waitForTimeout(100);
+
+    // Generate PDF with enhanced browser-matching options
     const pdfBuffer = await page.pdf({
-      width: '12in',
-      height: '9in',
-      printBackground: true,
-      margin: { top: '0in', right: '0in', bottom: '0in', left: '0in' },
+      width: options.width || '12in',
+      height: options.height || '9in',
+      printBackground: true,  // Ensures images/backgrounds render fully
+      preferCSSPageSize: true,  // Respects @page CSS rules
+      scale: options.scale || 1,  // 1:1 scale for exact browser matching
+      margin: options.margin || { top: '0in', right: '0in', bottom: '0in', left: '0in' },
+      displayHeaderFooter: false,  // No header/footer for clean output
+      format: options.format || null,  // Use custom dimensions instead of standard formats
     });
 
     // Validate PDF size (10MB limit)
