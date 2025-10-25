@@ -4,7 +4,8 @@
   "description": "Puppeteer PDF generation API for Railway",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server-ultra-minimal.js",
+    "start:original": "node server.js",
     "start:minimal": "node server-minimal-test.js",
     "dev": "node server.js"
   },
