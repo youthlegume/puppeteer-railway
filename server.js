@@ -63,6 +63,7 @@ app.get('/', (req, res) => {
   res.status(200).end();
 });
 
+
 // Additional CORS debugging middleware
 app.use((req, res, next) => {
   console.log('Request received:', {
