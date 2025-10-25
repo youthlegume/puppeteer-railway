@@ -49,9 +49,12 @@ server.on('error', (error) => {
   console.error('Server error:', error);
 });
 
-// Keep the app alive for Railway
+// Keep the app alive for Railway - VERY AGGRESSIVE
 setInterval(() => {
   console.log('Keeping alive at', new Date().toISOString());
-}, 60000); // Log every minute
+}, 2000); // Log every 2 seconds
+
+// Also add immediate activity
+console.log('Server started, beginning keep-alive immediately');
 
 console.log('Ultra-minimal server setup complete');
