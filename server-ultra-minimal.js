@@ -10,16 +10,28 @@ console.log('Port:', PORT);
 // Ultra-simple CORS
 app.use(cors());
 
+// Debug middleware to see all requests
+app.use((req, res, next) => {
+  console.log(`=== REQUEST: ${req.method} ${req.url} from ${req.ip} at ${new Date().toISOString()} ===`);
+  console.log('User-Agent:', req.get('User-Agent'));
+  console.log('Origin:', req.get('Origin'));
+  next();
+});
+
 // Root endpoint - Railway health check
 app.get('/', (req, res) => {
   console.log('Root endpoint hit');
   res.status(200).end();
 });
 
-// Health endpoint
+// Health endpoint - Railway specific format
 app.get('/health', (req, res) => {
   console.log('Health endpoint hit');
-  res.status(200).end();
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 // Test endpoint
@@ -36,5 +48,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 server.on('error', (error) => {
   console.error('Server error:', error);
 });
+
+// Keep the app alive for Railway
+setInterval(() => {
+  console.log('Keeping alive at', new Date().toISOString());
+}, 60000); // Log every minute
 
 console.log('Ultra-minimal server setup complete');
