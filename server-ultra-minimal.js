@@ -13,13 +13,13 @@ app.use(cors());
 // Root endpoint - Railway health check
 app.get('/', (req, res) => {
   console.log('Root endpoint hit');
-  res.status(200).send('OK');
+  res.status(200).end();
 });
 
 // Health endpoint
 app.get('/health', (req, res) => {
   console.log('Health endpoint hit');
-  res.status(200).send('OK');
+  res.status(200).end();
 });
 
 // Test endpoint
