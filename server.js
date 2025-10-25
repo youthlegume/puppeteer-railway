@@ -24,19 +24,37 @@ app.use(express.json({ limit: '10mb' }));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  console.log('Health check requested');
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
 });
 
 // Root GET endpoint for Railway health checks
 app.get('/', (req, res) => {
+  console.log('Root GET endpoint called');
   res.json({ 
     status: 'OK', 
     message: 'Puppeteer PDF Generation API',
     endpoints: {
       health: '/health',
       generatePdf: '/api/generate-pdf',
-      rootPdf: '/ (POST)'
+      rootPdf: '/ (POST)',
+      test: '/test'
     },
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// Simple test endpoint without Puppeteer
+app.get('/test', (req, res) => {
+  console.log('Test endpoint called');
+  res.json({ 
+    status: 'OK', 
+    message: 'Server is working without Puppeteer',
     timestamp: new Date().toISOString() 
   });
 });
