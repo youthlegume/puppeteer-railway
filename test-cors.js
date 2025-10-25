@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 async function testCORS() {
   const testUrl = 'http://localhost:3001';
   const testOrigin = 'https://start-blush_r4_p17_weak_guppy.toddle.site';

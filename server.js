@@ -54,8 +54,10 @@ app.use((req, res, next) => {
   console.log('Request received:', {
     method: req.method,
     url: req.url,
+    originalUrl: req.originalUrl,
     origin: req.get('Origin'),
-    headers: req.headers
+    userAgent: req.get('User-Agent'),
+    host: req.get('Host')
   });
   next();
 });
@@ -290,12 +292,31 @@ app.post('/', async (req, res) => {
 });
 
 
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  res.status(500).json({ error: 'Internal server error', details: err.message });
+});
+
+// Catch-all route for debugging
+app.use('*', (req, res) => {
+  console.log('Catch-all route hit:', req.method, req.originalUrl);
+  res.status(404).json({ 
+    error: 'Route not found', 
+    method: req.method, 
+    url: req.originalUrl,
+    availableRoutes: ['/health', '/api/generate-pdf', '/ (POST)']
+  });
+});
+
 // Start server
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`PDF endpoint: http://localhost:${PORT}/api/generate-pdf`);
   console.log(`Root endpoint: http://localhost:${PORT}/`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Server address: ${server.address()}`);
 });
 
 // Handle server errors
