@@ -60,7 +60,7 @@ app.use(express.json({ limit: '10mb' }));
 // Railway-specific: Respond to root path immediately for health checks
 app.get('/', (req, res) => {
   console.log('Railway health check on root path');
-  res.status(200).send('OK');
+  res.status(200).end();
 });
 
 // Additional CORS debugging middleware
@@ -79,7 +79,7 @@ app.use((req, res, next) => {
 // Health check endpoint - Railway specific
 app.get('/health', (req, res) => {
   console.log('Health check requested');
-  res.status(200).send('OK');
+  res.status(200).end();
 });
 
 // Additional info endpoint
