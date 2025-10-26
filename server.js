@@ -1,6 +1,4 @@
-console.log('Starting PDF server...');
-console.log('Node version:', process.version);
-console.log('Environment:', process.env.NODE_ENV || 'development');
+// server.js
 
 const express = require('express');
 const cors = require('cors');
@@ -14,34 +12,29 @@ const allowedOrigins = [
   'https://start-blush_r4_p17_weak_guppy.toddle.site',
   'https://unique-expectations-147008.framer.app',
   'http://localhost:3000',
-  'http://localhost:3001',
+  'http://localhost:3001'
 ];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept'],
+  }
 }));
-
-// --- Middleware ---
 app.use(express.json({ limit: '50mb' }));
 
 // --- Health Checks ---
 app.get('/', (req, res) => res.sendStatus(200));
 app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));
 
-// --- PDF Generator ---
+// --- PDF API ---
 app.post('/api/generate-pdf', async (req, res) => {
   const { html, pdfOptions = {} } = req.body;
-
-  if (!html || typeof html !== 'string')
+  if (!html || typeof html !== 'string') {
     return res.status(400).json({ error: 'Missing HTML content' });
+  }
 
   let browser;
   try {
-    // Launch Puppeteer
     browser = await puppeteer.launch({
       args: [
         '--no-sandbox',
@@ -54,22 +47,23 @@ app.post('/api/generate-pdf', async (req, res) => {
 
     const page = await browser.newPage();
 
-    // Set viewport size if specified
+    // Adjust viewport from options or use 1200x900 default (Framer layout)
     const width = pdfOptions.width ? parseInt(pdfOptions.width) : 1200;
     const height = pdfOptions.height ? parseInt(pdfOptions.height) : 900;
     await page.setViewport({ width, height });
 
-    // Load HTML (includes styles, fonts, etc.)
-    console.log('Rendering HTML of length:', html.length);
+    // Debug: uncomment to check received HTML content
+    // require('fs').writeFileSync('debug.html', html);
+
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // Match screen media for accurate styling
-    await page.emulateMediaType('screen');
+    // Wait for your main export section and for all fonts to load
+    await page.waitForSelector('.pdf-export', { timeout: 7000 });
+    await page.evaluateHandle('document.fonts.ready');
 
-    // Optional debug screenshot
-    // await page.screenshot({ path: 'debug.png', fullPage: true });
+    // Optional: wait a moment for animations or images
+    // await page.waitForTimeout(400);
 
-    // Generate PDF
     const buffer = await page.pdf({
       printBackground: true,
       preferCSSPageSize: true,
@@ -83,9 +77,9 @@ app.post('/api/generate-pdf', async (req, res) => {
     res.send(buffer);
 
     console.log('PDF generated successfully:', buffer.length, 'bytes');
-  } catch (error) {
-    console.error('PDF generation failed:', error);
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error('PDF generation failed:', err);
+    res.status(500).json({ error: err.message });
   } finally {
     if (browser) await browser.close().catch(() => {});
   }
