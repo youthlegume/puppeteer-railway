@@ -96,7 +96,7 @@ app.get('/test', (req, res) => {
   });
 });
 
-// Single PDF generation endpoint
+// PDF generation endpoint
 app.post('/api/generate-pdf', async (req, res) => {
   let browser;
   try {
@@ -139,7 +139,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 800 });
+    await page.setViewport({ width: 1920, height: 1080 }); // Larger viewport for full content
 
     if (useUrlMethod) {
       if (cookies && Array.isArray(cookies) && cookies.length > 0) {
@@ -150,7 +150,6 @@ app.post('/api/generate-pdf', async (req, res) => {
               ...cookie,
               url,
               value: String(cookie.value || ''),
-              // Optional: Add expires, secure if needed
             })),
           );
           console.log('Cookies set successfully');
@@ -165,21 +164,45 @@ app.post('/api/generate-pdf', async (req, res) => {
       console.log('Navigating to URL:', url);
       await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
 
+      // Debug: Log initial page content
+      const pageContent = await page.content();
+      console.log('Page content loaded:', pageContent.substring(0, 500) + '...');
+
+      // Inject styles to isolate .pdf-section
       await page.addStyleTag({
         content: `
           * { display: none !important; }
-          body { margin: 0 !important; padding: 0 !important; background: white !important; }
-          .pdf-section { display: block !important; width: 100% !important; height: auto !important; }
+          body { 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            background: white !important; 
+            min-height: 100vh !important; 
+          }
+          .pdf-section { 
+            display: block !important; 
+            width: 100% !important; 
+            height: auto !important; 
+            position: relative !important; 
+          }
           .pdf-section * { display: revert !important; }
         `,
       });
+      console.log('Styles injected to isolate .pdf-section');
 
+      // Wait for fonts
       await page.evaluate(() => document.fonts.ready);
-      // Dynamic wait for image loading
+      console.log('Fonts ready');
+
+      // Wait for images to load
       await page.waitForFunction(() => {
         const images = document.querySelectorAll('img');
         return Array.from(images).every(img => img.complete && img.naturalHeight > 0);
       }, { timeout: 60000 });
+      console.log('Images loaded');
+
+      // Debug: Log content after styles
+      const postStyleContent = await page.content();
+      console.log('Content after styles:', postStyleContent.substring(0, 500) + '...');
     } else {
       if (html.length > 50 * 1024 * 1024) {
         throw new Error('HTML content too large (50MB limit)');
@@ -196,7 +219,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       height: pdfOptions.height || options.height || '9in',
       printBackground: true,
       preferCSSPageSize: true,
-      scale: pdfOptions.scale || options.scale || 1,
+      scale: pdfOptions.scale || options.scale || 2, // Default to 2 for high resolution
       margin: pdfOptions.margin || options.margin || { top: '0in', right: '0in', bottom: '0in', left: '0in' },
       displayHeaderFooter: false,
       format: pdfOptions.format || options.format || null,
