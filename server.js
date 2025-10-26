@@ -33,6 +33,19 @@ app.post('/api/generate-pdf', async (req, res) => {
     return res.status(400).json({ error: 'Missing HTML content' });
   }
 
+  // 1. Save the ENTIRE html document to disk for inspection (optional but robust)
+  require('fs').writeFileSync('debug-sent-to-puppeteer.html', html);
+  // 2. Log key portions for quick inspection
+  const headMatch = html.match(/<head>([\s\S]*?)<\/head>/i);
+  const headContent = headMatch ? headMatch[1] : '<NO HEAD FOUND>';
+  console.log('--- HTML <head> content sent to Puppeteer:');
+  console.log(headContent);
+  const linkAndStyleTags = (headContent.match(/<(link|style)[\s\S]*?>[\s\S]*?<\/style>?/gi) || []).join('\n');
+  console.log('--- All <link> and <style> tags in head:');
+  console.log(linkAndStyleTags);
+  // Log top-level summary for auditing
+  console.log('HTML length:', html.length);
+
   let browser;
   try {
     browser = await puppeteer.launch({
