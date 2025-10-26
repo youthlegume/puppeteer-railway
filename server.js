@@ -21,11 +21,10 @@ try {
   console.log('Server will run without PDF generation capability');
 }
 
-
 // CORS configuration
 const allowedOrigins = [
   'https://start-blush_r4_p17_weak_guppy.toddle.site',
-  'https://unique-expectations-147008.framer.app',  // Add this line for Framer
+  'https://unique-expectations-147008.framer.app', // Updated for Framer
   'http://localhost:3000',
   'http://localhost:3001',
   'https://localhost:3000',
@@ -79,10 +78,9 @@ app.get('/info', (req, res) => {
     features: [
       'HTML rendering with cookie authentication',
       'PDF section isolation for clean photobooks',
-      'Large photobook support (50MB limit)',
+      'Custom 1200x900px size support',
       'High-resolution PDF generation',
       'Base64 image handling',
-      'Font loading optimization',
     ],
     timestamp: new Date().toISOString(),
   });
@@ -139,7 +137,7 @@ app.post('/api/generate-pdf', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 1920, height: 1080 }); // Larger viewport for full content
+    await page.setViewport({ width: 1200, height: 900 }); // Match Framer's 1200x900px
 
     if (cookies && Array.isArray(cookies) && cookies.length > 0) {
       console.log('Cookies to set:', JSON.stringify(cookies, null, 2));
@@ -169,14 +167,13 @@ app.post('/api/generate-pdf', async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause for rendering
 
     const pdfBuffer = await page.pdf({
-      width: pdfOptions.width || options.width || '12in',
-      height: pdfOptions.height || options.height || '9in',
+      width: pdfOptions.width || options.width || '1200px',
+      height: pdfOptions.height || options.height || '900px',
       printBackground: true,
       preferCSSPageSize: true,
-      scale: pdfOptions.scale || options.scale || 2, // Default to 2 for high resolution
-      margin: pdfOptions.margin || options.margin || { top: '0in', right: '0in', bottom: '0in', left: '0in' },
+      scale: pdfOptions.scale || options.scale || 1, // Default to 1 to avoid oversized elements
+      margin: pdfOptions.margin || options.margin || { top: '0px', right: '0px', bottom: '0px', left: '0px' },
       displayHeaderFooter: false,
-      format: pdfOptions.format || options.format || null,
     });
 
     if (pdfBuffer.length > 50 * 1024 * 1024) {
