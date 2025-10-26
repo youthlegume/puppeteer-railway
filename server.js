@@ -21,9 +21,11 @@ try {
   console.log('Server will run without PDF generation capability');
 }
 
+
 // CORS configuration
 const allowedOrigins = [
   'https://start-blush_r4_p17_weak_guppy.toddle.site',
+  'https://unique-expectations-147008.framer.app',  // Add this line for Framer
   'http://localhost:3000',
   'http://localhost:3001',
   'https://localhost:3000',
