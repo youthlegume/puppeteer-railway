@@ -69,14 +69,13 @@ app.get('/info', (req, res) => {
   console.log('Info endpoint called');
   res.status(200).json({
     status: 'OK',
-    message: 'Puppeteer PDF Generation API - URL + Cookies Support',
+    message: 'Puppeteer PDF Generation API - HTML + Cookies Support',
     endpoints: { health: '/health', generatePdf: '/api/generate-pdf' },
     methods: {
-      urlMethod: 'Send { url, cookies, pdfOptions } for URL-based PDF generation',
-      htmlMethod: 'Send { html, options } for HTML-based PDF generation (fallback)',
+      htmlMethod: 'Send { html, cookies, pdfOptions } for HTML-based PDF generation',
     },
     features: [
-      'URL navigation with cookie authentication',
+      'HTML rendering with cookie authentication',
       'PDF section isolation for clean photobooks',
       'Large photobook support (50MB limit)',
       'High-resolution PDF generation',
@@ -104,16 +103,15 @@ app.post('/api/generate-pdf', async (req, res) => {
       return res.status(503).json({ error: 'PDF generation service temporarily unavailable' });
     }
 
-    const { url, cookies, pdfOptions = {}, html, options = {} } = req.body;
-    const useUrlMethod = url && typeof url === 'string';
+    const { html, cookies, pdfOptions = {}, url, options = {} } = req.body;
     const useHtmlMethod = html && typeof html === 'string';
 
-    if (!useUrlMethod && !useHtmlMethod) {
-      return res.status(400).json({ error: 'Either URL or HTML content is required' });
+    if (!useHtmlMethod) {
+      return res.status(400).json({ error: 'HTML content is required' });
     }
 
-    console.log('Starting PDF generation...', useUrlMethod ? 'URL method' : 'HTML method');
-    console.log('Received payload:', { url, cookiesLength: cookies ? cookies.length : 0, pdfOptions });
+    console.log('Starting PDF generation with HTML method');
+    console.log('Received payload:', { htmlLength: html.length, cookiesLength: cookies ? cookies.length : 0, pdfOptions });
 
     browser = await puppeteer.launch({
       args: [
@@ -141,94 +139,32 @@ app.post('/api/generate-pdf', async (req, res) => {
     const page = await browser.newPage();
     await page.setViewport({ width: 1920, height: 1080 }); // Larger viewport for full content
 
-    if (useUrlMethod) {
-      if (cookies && Array.isArray(cookies) && cookies.length > 0) {
-        console.log('Cookies to set:', JSON.stringify(cookies, null, 2));
-        try {
-          await page.setCookie(
-            ...cookies.map(cookie => ({
-              ...cookie,
-              url,
-              value: String(cookie.value || ''),
-            })),
-          );
-          console.log('Cookies set successfully');
-        } catch (cookieError) {
-          console.error('Cookie setting error:', cookieError.message);
-          console.log('Proceeding without cookies due to error');
-        }
-      } else {
-        console.log('No cookies provided or invalid cookie array');
+    if (cookies && Array.isArray(cookies) && cookies.length > 0) {
+      console.log('Cookies to set:', JSON.stringify(cookies, null, 2));
+      try {
+        await page.setCookie(
+          ...cookies.map(cookie => ({
+            ...cookie,
+            value: String(cookie.value || ''),
+          })),
+        );
+        console.log('Cookies set successfully');
+      } catch (cookieError) {
+        console.error('Cookie setting error:', cookieError.message);
+        console.log('Proceeding without cookies due to error');
       }
-
-      console.log('Navigating to URL:', url);
-      await page.goto(url, { waitUntil: 'load', timeout: 60000 }); // Changed to 'load' for initial render
-
-      // Execute page JavaScript to ensure hydration
-      await page.evaluate(() => {
-        window.dispatchEvent(new Event('load')); // Trigger load event if needed
-        return new Promise(resolve => setTimeout(resolve, 500)); // Allow time for JS
-      });
-
-      // Debug: Log initial page content
-      const pageContent = await page.content();
-      console.log('Page content loaded:', pageContent.substring(0, 500) + '...');
-
-      // Inject styles to isolate .pdf-section with fallback
-      await page.addStyleTag({
-        content: `
-          * { display: none !important; }
-          body { 
-            margin: 0 !important; 
-            padding: 0 !important; 
-            background: white !important; 
-            min-height: 100vh !important; 
-          }
-          .pdf-section, .pdf-section * { 
-            display: block !important; 
-            width: 100% !important; 
-            height: auto !important; 
-            position: relative !important; 
-          }
-          /* Fallback: Show all if .pdf-section not found */
-          @media print {
-            .pdf-section:empty ~ * { display: block !important; }
-          }
-        `,
-      });
-      console.log('Styles injected to isolate .pdf-section');
-
-      // Wait for fonts
-      await page.evaluate(() => document.fonts.ready);
-      console.log('Fonts ready');
-
-      // Wait for .pdf-section elements and images
-      await page.waitForFunction(() => {
-        const sections = document.querySelectorAll('.pdf-section');
-        if (sections.length === 0) return false;
-        return Array.from(sections).every(section => {
-          const images = section.querySelectorAll('img, [style*="background-image"]');
-          return Array.from(images).every(img => {
-            const style = window.getComputedStyle(img);
-            return img.complete && (img.naturalHeight > 0 || style.backgroundImage !== 'none');
-          });
-        });
-      }, { timeout: 120000 }); // Increased to 120 seconds
-      console.log('PDF sections and images loaded');
-
-      // Debug: Log content after styles
-      const postStyleContent = await page.content();
-      console.log('Content after styles:', postStyleContent.substring(0, 500) + '...');
     } else {
-      if (html.length > 50 * 1024 * 1024) {
-        throw new Error('HTML content too large (50MB limit)');
-      }
-      console.log('Using HTML content method...');
-      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 60000 });
+      console.log('No cookies provided or invalid cookie array');
     }
 
+    if (html.length > 50 * 1024 * 1024) {
+      throw new Error('HTML content too large (50MB limit)');
+    }
+    console.log('Setting content with HTML length:', html.length);
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+
     await page.emulateMediaType('screen');
-    await new Promise(resolve => setTimeout(resolve, 100)); // Brief pause for transitions
+    await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause for rendering
 
     const pdfBuffer = await page.pdf({
       width: pdfOptions.width || options.width || '12in',
