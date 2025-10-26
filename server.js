@@ -168,7 +168,7 @@ app.post('/api/generate-pdf', async (req, res) => {
       const pageContent = await page.content();
       console.log('Page content loaded:', pageContent.substring(0, 500) + '...');
 
-      // Inject styles to isolate .pdf-section
+      // Inject styles to isolate .pdf-section with fallback
       await page.addStyleTag({
         content: `
           * { display: none !important; }
@@ -178,13 +178,16 @@ app.post('/api/generate-pdf', async (req, res) => {
             background: white !important; 
             min-height: 100vh !important; 
           }
-          .pdf-section { 
+          .pdf-section, .pdf-section * { 
             display: block !important; 
             width: 100% !important; 
             height: auto !important; 
             position: relative !important; 
           }
-          .pdf-section * { display: revert !important; }
+          /* Fallback: Show all if .pdf-section not found */
+          @media print {
+            .pdf-section:empty ~ * { display: block !important; }
+          }
         `,
       });
       console.log('Styles injected to isolate .pdf-section');
@@ -193,12 +196,15 @@ app.post('/api/generate-pdf', async (req, res) => {
       await page.evaluate(() => document.fonts.ready);
       console.log('Fonts ready');
 
-      // Wait for images to load
+      // Wait for .pdf-section elements to be present
       await page.waitForFunction(() => {
-        const images = document.querySelectorAll('img');
-        return Array.from(images).every(img => img.complete && img.naturalHeight > 0);
+        const sections = document.querySelectorAll('.pdf-section');
+        return sections.length > 0 && Array.from(sections).every(section => {
+          const images = section.querySelectorAll('img, [style*="background-image"]');
+          return Array.from(images).every(img => img.complete && (img.naturalHeight > 0 || getComputedStyle(img).backgroundImage !== 'none'));
+        });
       }, { timeout: 60000 });
-      console.log('Images loaded');
+      console.log('PDF sections and images loaded');
 
       // Debug: Log content after styles
       const postStyleContent = await page.content();
