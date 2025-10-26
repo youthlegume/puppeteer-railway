@@ -162,7 +162,13 @@ app.post('/api/generate-pdf', async (req, res) => {
       }
 
       console.log('Navigating to URL:', url);
-      await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
+      await page.goto(url, { waitUntil: 'load', timeout: 60000 }); // Changed to 'load' for initial render
+
+      // Execute page JavaScript to ensure hydration
+      await page.evaluate(() => {
+        window.dispatchEvent(new Event('load')); // Trigger load event if needed
+        return new Promise(resolve => setTimeout(resolve, 500)); // Allow time for JS
+      });
 
       // Debug: Log initial page content
       const pageContent = await page.content();
@@ -196,14 +202,18 @@ app.post('/api/generate-pdf', async (req, res) => {
       await page.evaluate(() => document.fonts.ready);
       console.log('Fonts ready');
 
-      // Wait for .pdf-section elements to be present
+      // Wait for .pdf-section elements and images
       await page.waitForFunction(() => {
         const sections = document.querySelectorAll('.pdf-section');
-        return sections.length > 0 && Array.from(sections).every(section => {
+        if (sections.length === 0) return false;
+        return Array.from(sections).every(section => {
           const images = section.querySelectorAll('img, [style*="background-image"]');
-          return Array.from(images).every(img => img.complete && (img.naturalHeight > 0 || getComputedStyle(img).backgroundImage !== 'none'));
+          return Array.from(images).every(img => {
+            const style = window.getComputedStyle(img);
+            return img.complete && (img.naturalHeight > 0 || style.backgroundImage !== 'none');
+          });
         });
-      }, { timeout: 60000 });
+      }, { timeout: 120000 }); // Increased to 120 seconds
       console.log('PDF sections and images loaded');
 
       // Debug: Log content after styles
